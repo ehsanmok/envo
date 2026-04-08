@@ -1,6 +1,6 @@
 """Tests for envo.env -- getenv and getenv_or."""
 
-from testing import assert_equal, assert_true, assert_false
+from std.testing import assert_equal, assert_true, assert_false
 from envo.env import getenv, getenv_or
 
 

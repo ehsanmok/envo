@@ -1,6 +1,6 @@
 """Tests for envo.loader -- load_config with layered precedence."""
 
-from testing import assert_equal, assert_true, assert_false
+from std.testing import assert_equal, assert_true, assert_false
 from std.ffi import external_call
 from envo.loader import load_config, _read_file
 
@@ -41,16 +41,14 @@ struct MinimalConfig(Defaultable, Movable):
 # ---------------------------------------------------------------------------
 
 
-fn _setenv(name: String, value: String) -> Int:
+def _setenv(name: String, value: String) -> Int:
     """Set an env var for test isolation (POSIX setenv)."""
-    return external_call["setenv", Int](
-        name.unsafe_cstr_ptr(), value.unsafe_cstr_ptr(), 1
-    )
+    return external_call["setenv", Int](name.unsafe_ptr(), value.unsafe_ptr(), 1)
 
 
-fn _unsetenv(name: String) -> Int:
+def _unsetenv(name: String) -> Int:
     """Unset an env var after a test."""
-    return external_call["unsetenv", Int](name.unsafe_cstr_ptr())
+    return external_call["unsetenv", Int](name.unsafe_ptr())
 
 
 # ---------------------------------------------------------------------------
@@ -162,7 +160,7 @@ def test_cli_overrides_string_field() raises:
     args.append("--host")
     args.append("api.example.com")
     var cfg = load_config[ServerConfig](
-        "tests/fixtures/server.toml", args=args
+        "tests/fixtures/server.toml", args=args.copy()
     )
     assert_equal(cfg.host, "api.example.com")
     assert_equal(cfg.port, 8080)  # unchanged from TOML
@@ -173,7 +171,7 @@ def test_cli_overrides_int_field() raises:
     args.append("--port")
     args.append("7070")
     var cfg = load_config[ServerConfig](
-        "tests/fixtures/server.toml", args=args
+        "tests/fixtures/server.toml", args=args.copy()
     )
     assert_equal(cfg.port, 7070)
 
@@ -182,7 +180,7 @@ def test_cli_overrides_bool_flag() raises:
     var args = List[String]()
     args.append("--debug")
     var cfg = load_config[ServerConfig](
-        "tests/fixtures/server.toml", args=args
+        "tests/fixtures/server.toml", args=args.copy()
     )
     assert_true(cfg.debug, "--debug flag must enable debug")
 
@@ -195,7 +193,7 @@ def test_cli_overrides_multiple_fields() raises:
     args.append("443")
     args.append("--debug")
     var cfg = load_config[ServerConfig](
-        "tests/fixtures/server.toml", args=args
+        "tests/fixtures/server.toml", args=args.copy()
     )
     assert_equal(cfg.host, "prod.example.com")
     assert_equal(cfg.port, 443)
@@ -207,7 +205,9 @@ def test_cli_unknown_flag_raises() raises:
     args.append("--nonexistent-flag")
     var raised = False
     try:
-        _ = load_config[ServerConfig]("tests/fixtures/server.toml", args=args)
+        _ = load_config[ServerConfig](
+            "tests/fixtures/server.toml", args=args.copy()
+        )
     except:
         raised = True
     assert_true(raised, "unknown CLI flag must raise")
@@ -233,7 +233,7 @@ def test_cli_beats_env() raises:
     args.append("--port")
     args.append("7777")
     var cfg = load_config[ServerConfig](
-        "tests/fixtures/server.toml", args=args
+        "tests/fixtures/server.toml", args=args.copy()
     )
     _ = _unsetenv("PORT")
     assert_equal(cfg.port, 7777)
@@ -246,7 +246,7 @@ def test_cli_beats_toml_env_unchanged() raises:
     args.append("--host")
     args.append("cli.host")
     var cfg = load_config[ServerConfig](
-        "tests/fixtures/server.toml", args=args
+        "tests/fixtures/server.toml", args=args.copy()
     )
     _ = _unsetenv("HOST")
     assert_equal(cfg.host, "cli.host")

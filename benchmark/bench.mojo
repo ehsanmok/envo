@@ -89,7 +89,7 @@ fn bench_load_config_with_cli(mut bencher: Bencher) raises:
     @parameter
     fn call() raises:
         var cfg = load_config[BenchConfig_](
-            "/tmp/envo_bench.toml", args=args
+            "/tmp/envo_bench.toml", args=args.copy()
         )
         keep(cfg.port)
 

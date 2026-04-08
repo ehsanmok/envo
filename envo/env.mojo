@@ -1,70 +1,52 @@
-"""Environment variable access via libc FFI.
+"""Environment variable access via the Mojo standard library.
 
-Wraps the POSIX ``getenv(3)`` C function to provide safe, idiomatic
-Mojo access to environment variables.
+Wraps ``std.os.getenv`` to provide ``Optional[String]`` semantics: an
+unset (or empty) variable returns ``None``, which lets callers distinguish
+"no override" from an explicit value.
 
 Example:
 
     from envo.env import getenv, getenv_or
 
-    var home = getenv("HOME")      # Optional[String]
+    var home = getenv("HOME")              # Optional[String]
     var port = getenv_or("PORT", "8080")  # String
 """
 
-from std.ffi import external_call
+from std.os import getenv as _os_getenv
 
 
-@always_inline
-fn getenv(name: String) -> Optional[String]:
+def getenv(name: String) -> Optional[String]:
     """Return the value of environment variable ``name``, or ``None``.
 
-    Calls libc ``getenv(3)``. The returned pointer is valid for the
-    lifetime of the process environment; this function immediately copies
-    the value into an owned ``String``.
+    An unset variable and a variable explicitly set to the empty string
+    are both treated as absent (return ``None``).  This is the correct
+    semantic for config-layer overrides: an empty env var should not
+    override a non-empty TOML value.
 
     Args:
-        name: The environment variable name (case-sensitive, NUL-terminated
-            by ``unsafe_cstr_ptr``).
+        name: The environment variable name (case-sensitive).
 
     Returns:
-        ``Some(value)`` if the variable is set, ``None`` otherwise.
+        ``Some(value)`` if the variable is set to a non-empty string,
+        ``None`` otherwise.
     """
-    var ptr = external_call["getenv", UnsafePointer[UInt8]](
-        name.unsafe_cstr_ptr()
-    )
-    if not ptr:
+    var val = _os_getenv(name)
+    if val == "":
         return None
-    return String(ptr=ptr, length=_cstrlen(ptr))
+    return val
 
 
-@always_inline
-fn getenv_or(name: String, default: String) -> String:
+def getenv_or(name: String, default: String) -> String:
     """Return the value of environment variable ``name``, or ``default``.
 
     Args:
         name: The environment variable name.
-        default: The fallback value when the variable is not set.
+        default: The fallback value when the variable is unset or empty.
 
     Returns:
-        The variable's value, or ``default`` if unset.
+        The variable's value, or ``default`` if unset/empty.
     """
     var val = getenv(name)
     if val:
         return val.value()
     return default
-
-
-@always_inline
-fn _cstrlen(ptr: UnsafePointer[UInt8]) -> Int:
-    """Return the byte length of a NUL-terminated C string.
-
-    Args:
-        ptr: Pointer to the start of the C string.
-
-    Returns:
-        Number of bytes before the NUL terminator.
-    """
-    var i = 0
-    while ptr[i] != 0:
-        i += 1
-    return i

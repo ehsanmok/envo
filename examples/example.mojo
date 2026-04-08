@@ -77,7 +77,7 @@ db_url = "postgres://db.internal/prod"
     args.append("443")
     args.append("--debug")
 
-    var cfg2 = load_config[ServerConfig]("/tmp/envo_example.toml", args=args)
+    var cfg2 = load_config[ServerConfig]("/tmp/envo_example.toml", args=args^)
     print("After CLI overrides:", cfg2)
 
     # --- 4. Precedence summary -------------------------------------------
