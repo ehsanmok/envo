@@ -1,5 +1,9 @@
 # envo
 
+[![CI](https://github.com/ehsanmok/envo/actions/workflows/ci.yml/badge.svg)](https://github.com/ehsanmok/envo/actions)
+[![Docs](https://github.com/ehsanmok/envo/actions/workflows/docs.yaml/badge.svg)](https://ehsanmok.github.io/envo)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
+
 Typed config loading from env vars, TOML, and CLI for Mojo.
 
 `envo` composes [`morph`](https://github.com/ehsanmok/morph)'s TOML and
