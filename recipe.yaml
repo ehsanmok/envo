@@ -1,0 +1,21 @@
+package:
+  name: envo
+  version: "0.1.0"
+
+source:
+  path: .
+
+build:
+  script:
+    - mkdir -p $PREFIX/lib/mojo
+    - cp -r envo $PREFIX/lib/mojo/
+
+requirements:
+  host:
+    - mojo <1.0
+  run:
+    - mojo <1.0
+
+about:
+  summary: Typed config loading from env vars, TOML, and CLI for Mojo
+  license: MIT
