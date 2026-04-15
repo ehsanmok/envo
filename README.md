@@ -18,7 +18,7 @@ env vars   PORT=9090
 TOML file  port = 8080      (lowest)
 ```
 
-## Quick start
+## Quick Start
 
 ```mojo
 from envo import load_config
@@ -53,6 +53,14 @@ var home = getenv("HOME")             # Optional[String]
 var port = getenv_or("PORT", "8080") # String
 ```
 
+## Installation
+
+```toml
+# pixi.toml
+[dependencies]
+envo = { git = "https://github.com/ehsanmok/envo.git", branch = "main" }
+```
+
 ## Field name mapping
 
 | Struct field | Env var    | CLI flag      |
@@ -67,13 +75,7 @@ var port = getenv_or("PORT", "8080") # String
 `Optional[String]`, `Optional[Int]`, `Optional[Float64]`, `Optional[Bool]`,
 `List[String]`, `List[Int]`
 
-## Installation
-
-```toml
-# pixi.toml
-[dependencies]
-envo = { git = "https://github.com/ehsanmok/envo.git", branch = "main" }
-```
+Full API reference: [ehsanmok.github.io/envo](https://ehsanmok.github.io/envo)
 
 ## Development
 
