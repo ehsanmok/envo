@@ -58,7 +58,7 @@ var port = getenv_or("PORT", "8080") # String
 ```toml
 # pixi.toml
 [dependencies]
-envo = { git = "https://github.com/ehsanmok/envo.git", tag = "v0.1.0" }
+envo = { git = "https://github.com/ehsanmok/envo.git", tag = "v0.1.1" }
 ```
 
 For the latest development version:
