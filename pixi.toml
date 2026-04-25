@@ -15,7 +15,7 @@ backend = { name = "pixi-build-rattler-build", version = "*" }
 
 [dependencies]
 envo = { path = "." }
-mojo = "<1.0"
+mojo = "==0.26.3.0.dev2026042005"
 morph = { git = "https://github.com/ehsanmok/morph.git", branch = "main" }
 
 [feature.dev.dependencies]
