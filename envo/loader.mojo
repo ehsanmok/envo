@@ -86,21 +86,21 @@ def load_config[
     var cfg = from_toml[T](toml_str)
 
     # --- Layer 2: environment variables ----------------------------------
-    comptime count = reflect[T]().field_count()
-    comptime names = reflect[T]().field_names()
-    comptime types = reflect[T]().field_types()
+    comptime count = reflect[T].field_count()
+    comptime names = reflect[T].field_names()
+    comptime types = reflect[T].field_types()
 
     comptime
     for idx in range(count):
         comptime field_name = names[idx]
         comptime field_type = types[idx]
-        comptime type_name = reflect[field_type]().name()
+        comptime type_name = reflect[field_type].name()
 
         var env_name = String(field_name).upper()
         var env_val = getenv(env_name)
         if env_val:
             var raw = env_val.value()
-            ref field = trait_downcast[_Base](reflect[T]().field_ref[idx](cfg))
+            ref field = trait_downcast[_Base](reflect[T].field_ref[idx](cfg))
             var ptr = UnsafePointer(to=field)
 
             comptime
@@ -163,7 +163,7 @@ def load_config[
             for idx in range(count):
                 comptime field_name = names[idx]
                 comptime field_type = types[idx]
-                comptime type_name = reflect[field_type]().name()
+                comptime type_name = reflect[field_type].name()
 
                 var cli_name = String(field_name).replace("_", "-")
                 var fn_bytes = String(field_name).as_bytes()
@@ -171,7 +171,7 @@ def load_config[
                 if flag == cli_name or (is_short and flag == short_name):
                     matched = True
                     ref field = trait_downcast[_Base](
-                        reflect[T]().field_ref[idx](cfg)
+                        reflect[T].field_ref[idx](cfg)
                     )
                     var ptr = UnsafePointer(to=field)
 
