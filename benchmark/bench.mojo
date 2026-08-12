@@ -3,7 +3,6 @@
 from std.benchmark import Bench, BenchConfig, BenchId, Bencher, keep
 from std.ffi import external_call
 from envo import load_config, getenv, getenv_or
-from envo.loader import _read_file, _apply_env_overrides, _apply_cli_overrides
 
 
 @fieldwise_init
@@ -22,56 +21,52 @@ struct BenchConfig_(Defaultable, Movable):
         self.db_url = "postgres://localhost/mydb"
 
 
-fn _setenv(name: String, value: String) -> Int:
+def _setenv(name: String, value: String) -> Int:
     return external_call["setenv", Int](
-        name.unsafe_cstr_ptr(), value.unsafe_cstr_ptr(), 1
+        name.unsafe_ptr(), value.unsafe_ptr(), 1
     )
 
 
-fn _unsetenv(name: String) -> Int:
-    return external_call["unsetenv", Int](name.unsafe_cstr_ptr())
+def _unsetenv(name: String) -> Int:
+    return external_call["unsetenv", Int](name.unsafe_ptr())
 
 
-@parameter
-fn bench_getenv(mut bencher: Bencher) raises:
+def bench_getenv(mut bencher: Bencher) capturing raises:
     @always_inline
     @parameter
-    fn call() raises:
+    def call() raises:
         var v = getenv("PATH")
         keep(v.__bool__())
 
     bencher.iter[call]()
 
 
-@parameter
-fn bench_getenv_or(mut bencher: Bencher) raises:
+def bench_getenv_or(mut bencher: Bencher) capturing raises:
     @always_inline
     @parameter
-    fn call() raises:
+    def call() raises:
         var v = getenv_or("__ENVO_BENCH_MISSING__", "default")
-        keep(len(v))
+        keep(v.byte_length())
 
     bencher.iter[call]()
 
 
-@parameter
-fn bench_load_config_toml_only(mut bencher: Bencher) raises:
+def bench_load_config_toml_only(mut bencher: Bencher) capturing raises:
     @always_inline
     @parameter
-    fn call() raises:
+    def call() raises:
         var cfg = load_config[BenchConfig_]("/tmp/envo_bench.toml")
         keep(cfg.port)
 
     bencher.iter[call]()
 
 
-@parameter
-fn bench_load_config_with_env(mut bencher: Bencher) raises:
+def bench_load_config_with_env(mut bencher: Bencher) capturing raises:
     _ = _setenv("PORT", "9090")
 
     @always_inline
     @parameter
-    fn call() raises:
+    def call() raises:
         var cfg = load_config[BenchConfig_]("/tmp/envo_bench.toml")
         keep(cfg.port)
 
@@ -79,18 +74,17 @@ fn bench_load_config_with_env(mut bencher: Bencher) raises:
     _ = _unsetenv("PORT")
 
 
-@parameter
-fn bench_load_config_with_cli(mut bencher: Bencher) raises:
-    var args = List[String]()
-    args.append("--port")
-    args.append("7777")
-
+def bench_load_config_with_cli(mut bencher: Bencher) capturing raises:
+    # ponytail: build args fresh per call rather than capturing+copying a
+    # shared outer List[String] -- the latter crashes inside Bencher.iter's
+    # hot loop (reproduced in isolation outside the harness it does not).
     @always_inline
     @parameter
-    fn call() raises:
-        var cfg = load_config[BenchConfig_](
-            "/tmp/envo_bench.toml", args=args.copy()
-        )
+    def call() raises:
+        var args = List[String]()
+        args.append("--port")
+        args.append("7777")
+        var cfg = load_config[BenchConfig_]("/tmp/envo_bench.toml", args=args^)
         keep(cfg.port)
 
     bencher.iter[call]()
@@ -99,14 +93,14 @@ fn bench_load_config_with_cli(mut bencher: Bencher) raises:
 def main() raises:
     # Write a benchmark TOML fixture
     var toml = (
-        'host = "localhost"\nport = 8080\ndebug = false\nmax_conns = 100\ndb_url'
-        ' = "postgres://localhost/mydb"\n'
+        'host = "localhost"\nport = 8080\ndebug = false\nmax_conns ='
+        ' 100\ndb_url = "postgres://localhost/mydb"\n'
     )
     with open("/tmp/envo_bench.toml", "w") as f:
         f.write(toml)
 
     var config = BenchConfig(max_iters=100_000)
-    var bench = Bench(config)
+    var bench = Bench(config^)
 
     bench.bench_function[bench_getenv](BenchId("getenv (PATH)"))
     bench.bench_function[bench_getenv_or](

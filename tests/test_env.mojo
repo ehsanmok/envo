@@ -8,7 +8,7 @@ def test_getenv_known_var() raises:
     # PATH is always set on POSIX systems
     var val = getenv("PATH")
     assert_true(val.__bool__(), "PATH must be set")
-    assert_true(len(val.value()) > 0, "PATH must be non-empty")
+    assert_true(val.value().byte_length() > 0, "PATH must be non-empty")
 
 
 def test_getenv_missing_var() raises:

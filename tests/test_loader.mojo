@@ -43,7 +43,9 @@ struct MinimalConfig(Defaultable, Movable):
 
 def _setenv(name: String, value: String) -> Int:
     """Set an env var for test isolation (POSIX setenv)."""
-    return external_call["setenv", Int](name.unsafe_ptr(), value.unsafe_ptr(), 1)
+    return external_call["setenv", Int](
+        name.unsafe_ptr(), value.unsafe_ptr(), 1
+    )
 
 
 def _unsetenv(name: String) -> Int:
@@ -58,10 +60,10 @@ def _unsetenv(name: String) -> Int:
 
 def test_read_file_contents() raises:
     var content = _read_file("tests/fixtures/server.toml")
-    assert_true(len(content) > 0, "_read_file must return non-empty string")
     assert_true(
-        "host" in content, "_read_file must contain 'host'"
+        content.byte_length() > 0, "_read_file must return non-empty string"
     )
+    assert_true("host" in content, "_read_file must contain 'host'")
 
 
 def test_read_file_missing() raises:
@@ -258,7 +260,7 @@ def test_cli_beats_toml_env_unchanged() raises:
 
 
 def test_minimal_config_toml() raises:
-    var toml = "name = \"Alice\"\ncount = 42\n"
+    var toml = 'name = "Alice"\ncount = 42\n'
     with open("/tmp/envo_test_minimal.toml", "w") as f:
         f.write(toml)
     var cfg = load_config[MinimalConfig]("/tmp/envo_test_minimal.toml")
@@ -267,7 +269,7 @@ def test_minimal_config_toml() raises:
 
 
 def test_minimal_config_env_override() raises:
-    var toml = "name = \"Alice\"\ncount = 42\n"
+    var toml = 'name = "Alice"\ncount = 42\n'
     with open("/tmp/envo_test_minimal2.toml", "w") as f:
         f.write(toml)
     _ = _setenv("NAME", "Bob")

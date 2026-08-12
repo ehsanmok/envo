@@ -145,7 +145,7 @@ def load_config[
             var arg = cli_args[i]
             var is_long = arg.startswith("--")
             var is_short = (
-                not is_long and arg.startswith("-") and len(arg) == 2
+                not is_long and arg.startswith("-") and arg.byte_length() == 2
             )
 
             if not is_long and not is_short:
