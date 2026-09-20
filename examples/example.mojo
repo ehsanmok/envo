@@ -1,4 +1,4 @@
-"""envo usage examples -- layered typed config loading."""
+"""Envo usage examples -- layered typed config loading."""
 
 from envo import load_config, getenv, getenv_or
 

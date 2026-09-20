@@ -29,7 +29,6 @@ Example:
     var cfg2 = load_config[ServerConfig]("config.toml", args=argv())
 """
 
-from std.builtin.rebind import trait_downcast
 from morph.reflect import (
     _Base,
     Morphable,
@@ -100,42 +99,45 @@ def load_config[
         var env_val = getenv(env_name)
         if env_val:
             var raw = env_val.value()
-            ref field = trait_downcast[_Base](reflect[T].field_ref[idx](cfg))
-            var ptr = UnsafePointer(to=field)
+            ref field = reflect[T].field_ref[idx](cfg)
+            comptime assert conforms_to(
+                type_of(field), _Base
+            ), "envo: struct field must be Deinitable & Movable"
+            var ptr = Pointer(to=field)
 
             comptime
             if type_name == STRING_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[String]().init_pointee_move(raw)
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[String]().unsafe_write(raw)
             elif type_name == INT_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Int]().init_pointee_move(atol(raw))
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Int]().unsafe_write(atol(raw))
             elif type_name == INT64_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Int64]().init_pointee_move(Int64(atol(raw)))
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Int64]().unsafe_write(Int64(atol(raw)))
             elif type_name == FLOAT64_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Float64]().init_pointee_move(atof(raw))
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Float64]().unsafe_write(atof(raw))
             elif type_name == FLOAT32_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Float32]().init_pointee_move(Float32(atof(raw)))
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Float32]().unsafe_write(Float32(atof(raw)))
             elif type_name == BOOL_NAME:
                 var bval = raw.lower() == "true" or raw == "1"
-                ptr.destroy_pointee()
-                ptr.bitcast[Bool]().init_pointee_move(bval)
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Bool]().unsafe_write(bval)
             elif type_name == OPT_STRING_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Optional[String]]().init_pointee_move(raw)
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Optional[String]]().unsafe_write(raw)
             elif type_name == OPT_INT_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Optional[Int]]().init_pointee_move(atol(raw))
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Optional[Int]]().unsafe_write(atol(raw))
             elif type_name == OPT_FLOAT64_NAME:
-                ptr.destroy_pointee()
-                ptr.bitcast[Optional[Float64]]().init_pointee_move(atof(raw))
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Optional[Float64]]().unsafe_write(atof(raw))
             elif type_name == OPT_BOOL_NAME:
                 var bval = raw.lower() == "true" or raw == "1"
-                ptr.destroy_pointee()
-                ptr.bitcast[Optional[Bool]]().init_pointee_move(bval)
+                ptr.unsafe_deinit_pointee()
+                ptr.unsafe_bitcast[Optional[Bool]]().unsafe_write(bval)
 
     # --- Layer 3: CLI arguments ------------------------------------------
     if args:
@@ -170,65 +172,66 @@ def load_config[
                 var short_name = chr(Int(fn_bytes[0]))
                 if flag == cli_name or (is_short and flag == short_name):
                     matched = True
-                    ref field = trait_downcast[_Base](
-                        reflect[T].field_ref[idx](cfg)
-                    )
-                    var ptr = UnsafePointer(to=field)
+                    ref field = reflect[T].field_ref[idx](cfg)
+                    comptime assert conforms_to(
+                        type_of(field), _Base
+                    ), "envo: struct field must be Deinitable & Movable"
+                    var ptr = Pointer(to=field)
 
                     comptime
                     if type_name == BOOL_NAME:
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Bool]().init_pointee_move(True)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Bool]().unsafe_write(True)
                     elif type_name == OPT_BOOL_NAME:
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Optional[Bool]]().init_pointee_move(True)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Optional[Bool]]().unsafe_write(True)
                     elif type_name == INT_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
                         var val = atol(cli_args[i])
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Int]().init_pointee_move(val)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Int]().unsafe_write(val)
                     elif type_name == OPT_INT_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
                         var val = atol(cli_args[i])
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Optional[Int]]().init_pointee_move(val)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Optional[Int]]().unsafe_write(val)
                     elif type_name == INT64_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
                         var val = Int64(atol(cli_args[i]))
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Int64]().init_pointee_move(val)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Int64]().unsafe_write(val)
                     elif type_name == FLOAT64_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
                         var val = atof(cli_args[i])
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Float64]().init_pointee_move(val)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Float64]().unsafe_write(val)
                     elif type_name == OPT_FLOAT64_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
                         var val = atof(cli_args[i])
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Optional[Float64]]().init_pointee_move(val)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Optional[Float64]]().unsafe_write(val)
                     elif type_name == STRING_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
-                        ptr.destroy_pointee()
-                        ptr.bitcast[String]().init_pointee_move(cli_args[i])
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[String]().unsafe_write(cli_args[i])
                     elif type_name == OPT_STRING_NAME:
                         i += 1
                         if i >= len(cli_args):
                             raise Error("Missing value for --" + cli_name)
-                        ptr.destroy_pointee()
-                        ptr.bitcast[Optional[String]]().init_pointee_move(
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[Optional[String]]().unsafe_write(
                             cli_args[i]
                         )
                     elif type_name == LIST_STRING_NAME:
@@ -239,8 +242,8 @@ def load_config[
                         var str_list = List[String]()
                         for si in range(len(slices)):
                             str_list.append(String(slices[si]))
-                        ptr.destroy_pointee()
-                        ptr.bitcast[List[String]]().init_pointee_move(
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[List[String]]().unsafe_write(
                             str_list^
                         )
                     elif type_name == LIST_INT_NAME:
@@ -251,8 +254,8 @@ def load_config[
                         var int_list = List[Int]()
                         for si in range(len(slices)):
                             int_list.append(atol(String(slices[si])))
-                        ptr.destroy_pointee()
-                        ptr.bitcast[List[Int]]().init_pointee_move(int_list^)
+                        ptr.unsafe_deinit_pointee()
+                        ptr.unsafe_bitcast[List[Int]]().unsafe_write(int_list^)
 
             if not matched:
                 raise Error("Unknown flag: --" + flag)

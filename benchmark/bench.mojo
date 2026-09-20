@@ -31,55 +31,50 @@ def _unsetenv(name: String) -> Int:
     return external_call["unsetenv", Int](name.unsafe_ptr())
 
 
-def bench_getenv(mut bencher: Bencher) capturing raises:
+def bench_getenv(mut bencher: Bencher) raises:
     @always_inline
-    @parameter
     def call() raises:
         var v = getenv("PATH")
         keep(v.__bool__())
 
-    bencher.iter[call]()
+    bencher.iter(call)
 
 
-def bench_getenv_or(mut bencher: Bencher) capturing raises:
+def bench_getenv_or(mut bencher: Bencher) raises:
     @always_inline
-    @parameter
     def call() raises:
         var v = getenv_or("__ENVO_BENCH_MISSING__", "default")
         keep(v.byte_length())
 
-    bencher.iter[call]()
+    bencher.iter(call)
 
 
-def bench_load_config_toml_only(mut bencher: Bencher) capturing raises:
+def bench_load_config_toml_only(mut bencher: Bencher) raises:
     @always_inline
-    @parameter
     def call() raises:
         var cfg = load_config[BenchConfig_]("/tmp/envo_bench.toml")
         keep(cfg.port)
 
-    bencher.iter[call]()
+    bencher.iter(call)
 
 
-def bench_load_config_with_env(mut bencher: Bencher) capturing raises:
+def bench_load_config_with_env(mut bencher: Bencher) raises:
     _ = _setenv("PORT", "9090")
 
     @always_inline
-    @parameter
     def call() raises:
         var cfg = load_config[BenchConfig_]("/tmp/envo_bench.toml")
         keep(cfg.port)
 
-    bencher.iter[call]()
+    bencher.iter(call)
     _ = _unsetenv("PORT")
 
 
-def bench_load_config_with_cli(mut bencher: Bencher) capturing raises:
+def bench_load_config_with_cli(mut bencher: Bencher) raises:
     # ponytail: build args fresh per call rather than capturing+copying a
     # shared outer List[String] -- the latter crashes inside Bencher.iter's
     # hot loop (reproduced in isolation outside the harness it does not).
     @always_inline
-    @parameter
     def call() raises:
         var args = List[String]()
         args.append("--port")
@@ -87,7 +82,7 @@ def bench_load_config_with_cli(mut bencher: Bencher) capturing raises:
         var cfg = load_config[BenchConfig_]("/tmp/envo_bench.toml", args=args^)
         keep(cfg.port)
 
-    bencher.iter[call]()
+    bencher.iter(call)
 
 
 def main() raises:
@@ -102,18 +97,20 @@ def main() raises:
     var config = BenchConfig(max_iters=100_000)
     var bench = Bench(config^)
 
-    bench.bench_function[bench_getenv](BenchId("getenv (PATH)"))
-    bench.bench_function[bench_getenv_or](
-        BenchId("getenv_or (missing -> default)")
+    bench.bench_function(bench_getenv, BenchId("getenv (PATH)"))
+    bench.bench_function(
+        bench_getenv_or, BenchId("getenv_or (missing -> default)")
     )
-    bench.bench_function[bench_load_config_toml_only](
-        BenchId("load_config (TOML only)")
+    bench.bench_function(
+        bench_load_config_toml_only, BenchId("load_config (TOML only)")
     )
-    bench.bench_function[bench_load_config_with_env](
-        BenchId("load_config (TOML + env override)")
+    bench.bench_function(
+        bench_load_config_with_env,
+        BenchId("load_config (TOML + env override)"),
     )
-    bench.bench_function[bench_load_config_with_cli](
-        BenchId("load_config (TOML + env + CLI override)")
+    bench.bench_function(
+        bench_load_config_with_cli,
+        BenchId("load_config (TOML + env + CLI override)"),
     )
 
     bench.dump_report()
